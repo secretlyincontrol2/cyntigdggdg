@@ -10,6 +10,7 @@ import leaderboardRoutes from './routes/leaderboardRoutes';
 import flashcardRoutes from './routes/flashcardRoutes';
 import { initializeAI } from './controllers/tutorController';
 
+import { execSync } from 'child_process';
 import axios from 'axios';
 
 const app = express();
@@ -78,9 +79,21 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 
+// Debug route to see container processes
+app.get('/api/admin/debug', (req, res) => {
+    try {
+        const ps = execSync('ps aux').toString();
+        const netstat = execSync('netstat -tulpn').toString();
+        const files = execSync('ls -R .').toString();
+        res.json({ ps, netstat, files });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message, stack: err.stack });
+    }
+});
+
 // Test route
 app.get('/', (req, res) => {
-    res.send('BUPT-AI API is running v1.0.7-IPV4-FIX ✅ (Proxy Active)');
+    res.send('BUPT-AI API is running v1.0.8-DEBUG ✅ (Proxy Active)');
 });
 
 export default app;
