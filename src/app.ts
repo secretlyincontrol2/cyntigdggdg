@@ -25,7 +25,7 @@ app.all('/api/ai/test', (req, res) => {
     res.json({ message: 'AI Proxy Route is active 🤖', originalUrl: req.originalUrl });
 });
 
-app.post('/api/ai/*', async (req, res) => {
+app.post('/api/ai/:path*', async (req, res) => {
     try {
         const aiPath = req.originalUrl.replace('/api/ai', '');
         console.log(`[PROXY] POST ${req.originalUrl} -> http://localhost:3002/api/ai${aiPath}`);
@@ -47,7 +47,7 @@ app.post('/api/ai/*', async (req, res) => {
     }
 });
 
-app.get('/api/ai/*', async (req, res) => {
+app.get('/api/ai/:path*', async (req, res) => {
     try {
         const aiPath = req.originalUrl.replace('/api/ai', '');
         console.log(`[PROXY] GET ${req.originalUrl} -> http://localhost:3002/api/ai${aiPath}`);
