@@ -80,7 +80,7 @@ app.use('/api/flashcards', flashcardRoutes);
 
 // Test route
 app.get('/', (req, res) => {
-    res.send('BUPT-AI API is running v1.0.5-RESOURCES-FIX ✅ (Proxy Active)');
+    res.send('BUPT-AI API is running v1.0.6-DATABASE-FIX ✅ (Proxy Active)');
 });
 
 export default app;

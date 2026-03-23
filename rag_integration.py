@@ -87,18 +87,18 @@ class RAGTutor:
             print(f"🏠 No Cloud keys found, using local ChromaDB at: {db_path}")
             self.chroma_client = chromadb.PersistentClient(path=db_path)
 
-        # ── Load the collection ─────────────────────────────────────
+        # ── Load or Create the collection ───────────────────────────
         collections = self.chroma_client.list_collections()
+        
         if not collections:
-            raise ValueError(
-                "❌ No collections found in ChromaDB!\n"
-                "   Run your Colab notebook first to build the vector database."
-            )
-
-        # Use the first available collection (usually "babcock_courses")
-        self.collection = collections[0]
+            print("📦 No collections found. Creating default 'babcock_courses'...")
+            self.collection = self.chroma_client.create_collection(name="babcock_courses")
+        else:
+            # Use the first available collection (usually "babcock_courses")
+            self.collection = collections[0]
+            
         doc_count = self.collection.count()
-        print(f"✅ Collection loaded: '{self.collection.name}' "
+        print(f"✅ Collection active: '{self.collection.name}' "
               f"({doc_count:,} chunks)")
         print(f"{'═' * 50}")
         print("🎓 RAG Tutor is ready!\n")
