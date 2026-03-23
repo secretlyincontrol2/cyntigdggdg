@@ -21,18 +21,28 @@ app.use(express.json());
 initializeAI().catch(err => console.error('AI initialization error:', err));
 
 // Proxy to Python AI Server (running on 3002 inside Docker)
+app.all('/api/ai/test', (req, res) => {
+    res.json({ message: 'AI Proxy Route is active 🤖', originalUrl: req.originalUrl });
+});
+
 app.post('/api/ai/*', async (req, res) => {
     try {
         const aiPath = req.originalUrl.replace('/api/ai', '');
+        console.log(`[PROXY] POST ${req.originalUrl} -> http://localhost:3002/api/ai${aiPath}`);
+        
         const response = await axios({
             method: 'post',
             url: `http://localhost:3002/api/ai${aiPath}`,
             data: req.body,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 30000 // 30s timeout for AI
         });
         res.status(response.status).json(response.data);
     } catch (error: any) {
-        console.error('AI Proxy Error:', error.message);
+        console.error('AI Proxy POST Error:', error.message);
+        if (error.code === 'ECONNREFUSED') {
+            return res.status(503).json({ message: 'AI Server is offline or starting up' });
+        }
         res.status(error.response?.status || 500).json(error.response?.data || { message: 'AI Server Error' });
     }
 });
@@ -40,13 +50,20 @@ app.post('/api/ai/*', async (req, res) => {
 app.get('/api/ai/*', async (req, res) => {
     try {
         const aiPath = req.originalUrl.replace('/api/ai', '');
+        console.log(`[PROXY] GET ${req.originalUrl} -> http://localhost:3002/api/ai${aiPath}`);
+
         const response = await axios({
             method: 'get',
             url: `http://localhost:3002/api/ai${aiPath}`,
-            params: req.query
+            params: req.query,
+            timeout: 10000
         });
         res.status(response.status).json(response.data);
     } catch (error: any) {
+        console.error('AI Proxy GET Error:', error.message);
+        if (error.code === 'ECONNREFUSED') {
+            return res.status(503).json({ message: 'AI Server is offline or starting up' });
+        }
         res.status(error.response?.status || 500).json(error.response?.data || { message: 'AI Server Error' });
     }
 });
