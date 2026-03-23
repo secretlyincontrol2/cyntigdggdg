@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
+import prisma from '../config/prismaClient';
 
 const generateToken = (id: string) => {
     return jwt.sign({ id }, process.env.JWT_SECRET || 'secret', {
@@ -30,7 +30,14 @@ export const registerUser = async (req: Request, res: Response) => {
     }
 
     // Check if user exists
-    const userExists = await User.findOne({ $or: [{ matricNumber }, { schoolEmail }] });
+    const userExists = await prisma.user.findFirst({
+        where: {
+            OR: [
+                { matricNumber },
+                { schoolEmail }
+            ]
+        }
+    });
 
     if (userExists) {
         res.status(400).json({ message: 'User already exists' });
@@ -42,23 +49,26 @@ export const registerUser = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create user
-    const user = await User.create({
-        lastname,
-        firstname,
-        middlename,
-        matricNumber,
-        schoolEmail,
-        password: hashedPassword,
-    });
+    try {
+        const user = await prisma.user.create({
+            data: {
+                lastname,
+                firstname,
+                middlename,
+                matricNumber,
+                schoolEmail,
+                password: hashedPassword,
+            },
+        });
 
-    if (user) {
         res.status(201).json({
             _id: user.id,
             name: `${user.firstname} ${user.lastname}`,
             email: user.schoolEmail,
             token: generateToken(user.id),
         });
-    } else {
+    } catch (error) {
+        console.error('Registration error:', error);
         res.status(400).json({ message: 'Invalid user data' });
     }
 };
@@ -69,17 +79,18 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
     const { matricNumber, password } = req.body;
 
-    // Check for user email
-    const user = await User.findOne({ matricNumber });
+    // Check for user
+    const user = await prisma.user.findUnique({
+        where: { matricNumber }
+    });
 
-    if (user && (await bcrypt.compare(password, user.password as string))) {
+    if (user && (await bcrypt.compare(password, user.password))) {
         res.json({
             _id: user.id,
             name: `${user.firstname} ${user.lastname}`,
             email: user.schoolEmail,
             token: generateToken(user.id),
-            // Return onboarding status indicator if needed?
-            isOnboarded: !!user.school, // Simple check if they have completed academic info
+            isOnboarded: !!user.school, 
         });
     } else {
         res.status(400).json({ message: 'Invalid credentials' });
@@ -91,7 +102,16 @@ export const loginUser = async (req: Request, res: Response) => {
 // @access  Private
 export const getMe = async (req: any, res: Response) => {
     // req.user is set by auth middleware
-    const user = await User.findById(req.user.id);
+    const user = await prisma.user.findUnique({
+        where: { id: req.user.id }
+    });
 
-    res.status(200).json(user);
+    if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+    }
+
+    // Exclude password from response
+    const { password, ...userWithoutPassword } = user;
+    res.status(200).json(userWithoutPassword);
 };

@@ -1,0 +1,15 @@
+node_modules
+dist
+.git
+bddd_canonical
+cynti_canonical
+bddd_clone
+manual_results*
+test_results*
+deploy_*
+manual_verify.ts
+manual_results.txt
+test_results_final.txt
+Manual Verification Result.webp
+*.ps1
+.env

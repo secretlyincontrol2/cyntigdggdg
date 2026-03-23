@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import User from '../models/User';
+import prisma from '../config/prismaClient';
 
 // @desc    Update user personalization (Onboarding)
 // @route   POST /api/onboarding
@@ -14,44 +14,42 @@ export const updateOnboarding = async (req: Request, res: Response) => {
             breakDuration,
             dailyHours,
             readerType,
-            // Academic fields might be sent here or in a separate step
             school,
             department,
             level,
             courses
         } = req.body;
 
-        const user = await User.findById(req.user.id);
+        const userId = req.user.id;
 
-        if (user) {
-            if (gender) user.gender = gender;
-            if (age) user.age = Number(age);
-            if (preferredStudyMode) user.studyPreference = preferredStudyMode;
-            if (audioOrText) user.audioOrText = audioOrText;
-            if (breakDuration) user.readDuration = breakDuration;
-            if (dailyHours) user.studyHours = dailyHours;
-            if (readerType) user.dayOrNight = readerType;
+        // Construct update data object dynamically
+        const updateData: any = {};
+        if (gender) updateData.gender = gender;
+        if (age) updateData.age = Number(age);
+        if (preferredStudyMode) updateData.studyPreference = preferredStudyMode;
+        if (audioOrText) updateData.audioOrText = audioOrText;
+        if (breakDuration) updateData.readDuration = breakDuration;
+        if (dailyHours) updateData.studyHours = dailyHours;
+        if (readerType) updateData.dayOrNight = readerType;
+        if (school) updateData.school = school;
+        if (department) updateData.department = department;
+        if (level) updateData.level = Number(level);
+        if (courses) updateData.courses = courses;
 
-            // Academic info update if provided
-            if (school) user.school = school;
-            if (department) user.department = department;
-            if (level) user.level = Number(level);
-            if (courses) user.courses = courses;
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: updateData
+        });
 
-            const updatedUser = await user.save();
-
-            res.json({
-                _id: updatedUser.id,
-                name: `${updatedUser.firstname} ${updatedUser.lastname}`,
-                email: updatedUser.schoolEmail,
-                studyPreference: updatedUser.studyPreference,
-                isOnboarded: true
-            });
-        } else {
-            res.status(404).json({ message: 'User not found' });
-        }
+        res.json({
+            _id: updatedUser.id,
+            name: `${updatedUser.firstname} ${updatedUser.lastname}`,
+            email: updatedUser.schoolEmail,
+            studyPreference: updatedUser.studyPreference,
+            isOnboarded: true
+        });
     } catch (error) {
-        console.error(error);
+        console.error('Onboarding update error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 };

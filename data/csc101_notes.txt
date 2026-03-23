@@ -1,0 +1,26 @@
+# CSC 101: Introduction to Computing - Study Notes
+
+## Topic 1: Introduction to Computers
+A computer is an electronic device that manipulates information, or data. It has the ability to store, retrieve, and process data. You may already know that you can use a computer to type documents, send email, play games, and browse the Web. You can also use it to edit or create spreadsheets, presentations, and even videos.
+
+## Topic 2: Binary Systems and Number Bases
+Computers use the binary number system to represent all data and instructions. Binary is a base-2 system, meaning it only uses two digits: 0 and 1.
+- Decimal is Base-10 (0-9)
+- Binary is Base-2 (0-1)
+- Hexadecimal is Base-16 (0-9, A-F)
+
+## Topic 3: Data Structures Basics
+A data structure is a specialized format for organizing, processing, retrieving and storing data. There are several basic and advanced types of data structures, all designed to arrange data to suit a specific purpose.
+- Arrays: A collection of items stored at contiguous memory locations.
+- Linked Lists: A linear collection of data elements whose order is not given by their physical placement in memory. Instead, each element points to the next.
+
+## Topic 4: Binary Search Trees (BST)
+A binary search tree is a rooted binary tree data structure with the following properties:
+1. The left subtree of a node contains only nodes with keys lesser than the node’s key.
+2. The right subtree of a node contains only nodes with keys greater than the node’s key.
+3. The left and right subtree each must also be a binary search tree.
+
+## Topic 5: Sorting Algorithms
+Sorting is the process of arranging data in a specific order, typically ascending or descending.
+- Bubble Sort: Repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.
+- Quick Sort: A divide-and-conquer algorithm that picks an element as a 'pivot' and partitions the given array around the picked pivot.

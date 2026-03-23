@@ -1,0 +1,199 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(uuid())
+  lastname         String
+  firstname        String
+  middlename       String?
+  matricNumber     String   @unique
+  schoolEmail      String   @unique
+  password         String
+  
+  gender           String?
+  age              Int?
+  studyPreference  String   @default("text")
+  audioOrText      String?
+  readDuration     String?
+  studyHours       String?
+  dayOrNight       String   @default("day")
+  
+  school           String?
+  department       String?
+  level            Int?
+  courses          String[]
+  
+  points           Int      @default(0)
+  studyHoursTotal  Int      @default(0)
+  goals            String[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studySessions    StudySession[]
+  activityLogs     ActivityLog[]
+  performanceMetrics PerformanceMetric[]
+  practiceSessions PracticeSession[]
+  studentGoals     StudentGoal[]
+  flashcards       Flashcard[]
+}
+
+model StudySession {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  courseId         String
+  courseName       String
+  startTime        DateTime @default(now())
+  endTime          DateTime?
+  durationMinutes  Int      @default(0)
+  topicsCovered    String[]
+  notes            String?
+  status           String   @default("active")
+  sessionType      String   @default("concept_study")
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ActivityLog {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  activityType     String
+  activityDate     DateTime @default(now())
+  courseId         String
+  courseName       String
+  duration         Int?
+  questionsAttempted Int?
+  score            Int?
+  description      String
+  metadata         Json?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model PerformanceMetric {
+  id                      String   @id @default(uuid())
+  userId                  String
+  user                    User     @relation(fields: [userId], references: [id])
+  dateRecorded            DateTime @default(now())
+  courseId                String
+  courseName              String
+  
+  totalStudyMinutes       Int      @default(0)
+  studySessions           Int      @default(0)
+  averageSessionDuration  Float    @default(0)
+  
+  totalQuestionsAttempted Int      @default(0)
+  correctAnswers          Int      @default(0)
+  incorrectAnswers        Int      @default(0)
+  overallAccuracy         Float    @default(0)
+  
+  performanceScore        Int      @default(0)
+  consistencyScore        Int      @default(0)
+  growthScore             Int      @default(0)
+  leaderboardPoints       Int      @default(0)
+  
+  strongTopics            String[]
+  weakTopics              String[]
+  
+  classRank               Int?
+  percentileRank          Float?
+  
+  currentStudyStreak      Int      @default(0)
+  maxStudyStreak          Int      @default(0)
+  
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model PracticeSession {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id])
+  courseId              String
+  courseName            String
+  questionsAttempted    Int      @default(0)
+  correctAnswers        Int      @default(0)
+  incorrectAnswers      Int      @default(0)
+  accuracyPercentage    Float    @default(0)
+  averageTimePerQuestion Float    @default(0)
+  weakAreas             String[]
+  strongAreas           String[]
+  sessioStatus          String   @default("in_progress")
+  sessionDurationMinutes Int     @default(0)
+  
+  questionDetails       Json?    // Array of objects
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model StudentGoal {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  goalType           String   @default("daily")
+  goalTitle          String
+  goalDescription    String
+  targetValue        Int
+  currentProgress    Int      @default(0)
+  unit               String   @default("count")
+  subject            String
+  priority           String   @default("medium")
+  status             String   @default("pending")
+  dueDate            DateTime
+  completedDate      DateTime?
+  aiGenerated        Boolean  @default(true)
+  motivationalMessage String?
+  difficultyLevel    String   @default("intermediate")
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model CourseContent {
+  id          String   @id @default(uuid())
+  courseId    String
+  courseName  String
+  contentType String
+  title       String
+  description String?
+  uploadedBy  String
+  fileUrl     String?
+  filePath    String?
+  isEmbedded  Boolean  @default(false)
+  vectorIds   String[]
+  topics      String[]
+  uploadDate  DateTime @default(now())
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Flashcard {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  courseId     String
+  courseName   String
+  front        String   @db.Text
+  back         String   @db.Text
+  topic        String?
+  difficulty   String?  @default("intermediate")
+  lastReviewed DateTime?
+  isActive     Boolean  @default(true)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
