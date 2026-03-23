@@ -37,4 +37,4 @@ EXPOSE 7860
 
 # Start the application
 # Use a simple shell command to background the Python server and run the Node server
-CMD python3 ai_server.py & npm start
+CMD python3 ai_server.py > python.log 2>&1 & npm start

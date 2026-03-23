@@ -79,21 +79,21 @@ app.use('/api/goals', goalRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 
-// Debug route to see container processes
+// Debug route to see container diagnostics
 app.get('/api/admin/debug', (req, res) => {
     try {
-        const ps = execSync('ps aux').toString();
-        const netstat = execSync('netstat -tulpn').toString();
-        const files = execSync('ls -R .').toString();
-        res.json({ ps, netstat, files });
+        const fs = require('fs');
+        const log = fs.existsSync('python.log') ? fs.readFileSync('python.log', 'utf8') : 'Log not found';
+        const files = execSync('ls -R').toString();
+        res.json({ log, files });
     } catch (err: any) {
-        res.status(500).json({ error: err.message, stack: err.stack });
+        res.status(500).json({ error: err.message, stderr: err.stderr?.toString() });
     }
 });
 
 // Test route
 app.get('/', (req, res) => {
-    res.send('BUPT-AI API is running v1.0.8-DEBUG ✅ (Proxy Active)');
+    res.send('BUPT-AI API is running v1.0.9-DIAGNOSTIC ✅ (Proxy Active)');
 });
 
 export default app;
