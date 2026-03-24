@@ -21,32 +21,17 @@ import os
 import chromadb
 import google.generativeai as genai
 from dotenv import load_dotenv
+from chromadb.utils.embedding_functions import GoogleGenerativeAiEmbeddingFunction
 
 
 class RAGTutor:
     """
     Core RAG (Retrieval-Augmented Generation) tutor.
-
-    How RAG works in this system:
-    1. Student asks a question (e.g., "Explain binary search")
-    2. ChromaDB searches the vector database for the most relevant
-       chunks of lecturer notes / past questions
-    3. Those chunks are passed as CONTEXT to Gemini Flash Lite
-    4. Gemini generates a response grounded in the actual course materials
-
-    This means the AI doesn't just make things up — it uses YOUR
-    lecturer's notes to give accurate, course-specific answers.
     """
 
     def __init__(self, chroma_db_path=None, env_path=None):
         """
         Initialize the RAG tutor.
-
-        Args:
-            chroma_db_path: Path to your ChromaDB directory.
-                            Defaults to ./chroma_db
-            env_path:       Path to your .env file.
-                            Defaults to ./.env
         """
         # ── Load environment variables ──────────────────────────────
         env_file = env_path or os.path.join(os.path.dirname(__file__), ".env")
@@ -66,6 +51,13 @@ class RAGTutor:
         genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel(self.model_name)
         print(f"✅ Gemini model loaded: {self.model_name}")
+
+        # ── Initialize Embedding Function (API-based, 0 local RAM) ──
+        # This prevents the server from loading local SentenceTransformer models
+        # which would exceed Render's 512MB RAM limit.
+        self.embedding_function = GoogleGenerativeAiEmbeddingFunction(
+            api_key=self.api_key
+        )
 
         # ── Connect to Chroma Cloud ─────────────────────────────────
         cloud_api_key = os.getenv("CHROMA_API_KEY")
@@ -88,20 +80,28 @@ class RAGTutor:
             self.chroma_client = chromadb.PersistentClient(path=db_path)
 
         # ── Load or Create the collection ───────────────────────────
-        collections = self.chroma_client.list_collections()
-        
-        if not collections:
-            print("📦 No collections found. Creating default 'babcock_courses'...")
-            self.collection = self.chroma_client.create_collection(name="babcock_courses")
-        else:
-            # Use the first available collection (usually "babcock_courses")
-            self.collection = collections[0]
+        try:
+            # We use get_or_create_collection to ensure the embedding function is attached
+            self.collection = self.chroma_client.get_or_create_collection(
+                name="babcock_courses",
+                embedding_function=self.embedding_function
+            )
+        except Exception as e:
+            print(f"⚠️ Collection error: {e}. Falling back to default list.")
+            collections = self.chroma_client.list_collections()
+            if not collections:
+                self.collection = self.chroma_client.create_collection(
+                    name="babcock_courses",
+                    embedding_function=self.embedding_function
+                )
+            else:
+                self.collection = collections[0]
             
         doc_count = self.collection.count()
         print(f"✅ Collection active: '{self.collection.name}' "
               f"({doc_count:,} chunks)")
         print(f"{'═' * 50}")
-        print("🎓 RAG Tutor is ready!\n")
+        print("🎓 RAG Tutor is ready (Memory Optimized)!\n")
 
     # ─────────────────────────────────────────────────────────────
     # UTILITY: Retrieve relevant chunks from the vector DB

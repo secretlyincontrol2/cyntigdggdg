@@ -1,0 +1,54 @@
+﻿git : remote: error: GH013: Repository rule violations found for refs/heads/main.    
+    
+At line:1 char:1
++ git push -u origin main *>&1 | Out-File -Encoding utf8 push_error2.tx ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (remote: error: ...s/main.        :Strin 
+   g) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+remote: 
+remote: - GITHUB PUSH PROTECTION        
+remote:   ΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇö
+ΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇö        
+remote:     Resolve the following violations before pushing again        
+remote: 
+remote:     - Push cannot contain secrets        
+remote: 
+remote:             
+remote:      (?) Learn how to resolve a blocked push        
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secre
+t-scanning-and-push-protection/working-with-push-protection-from-the-command-line#res
+olving-a-blocked-push        
+remote:             
+remote:             
+remote:       ΓÇöΓÇö Google OAuth Client ID 
+ΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇö 
+       
+remote:        locations:        
+remote:          - commit: 5e9e820448d2e6bfd99adc3f48a170bcbd9e85c7        
+remote:            path: settings.yaml:3        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow 
+the secret.        
+remote:        https://github.com/secretlyincontrol2/cyntigdggdg/security/secret-scan
+ning/unblock-secret/3BKqM94iBBEblDnYfjDxn4ucdz7        
+remote:             
+remote:             
+remote:       ΓÇöΓÇö Google OAuth Client Secret 
+ΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇöΓÇö        
+remote:        locations:        
+remote:          - commit: 5e9e820448d2e6bfd99adc3f48a170bcbd9e85c7        
+remote:            path: settings.yaml:4        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow 
+the secret.        
+remote:        https://github.com/secretlyincontrol2/cyntigdggdg/security/secret-scan
+ning/unblock-secret/3BKqM6epowN8G1uzGQMEEh6MacQ        
+remote:             
+remote: 
+remote: 
+To https://github.com/secretlyincontrol2/cyntigdggdg.git
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 
+'https://github.com/secretlyincontrol2/cyntigdggdg.git'

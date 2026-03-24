@@ -29,11 +29,11 @@ app.all('/api/ai/test', (req, res) => {
 app.post(/^\/api\/ai\/(.*)/, async (req, res) => {
     try {
         const aiPath = req.originalUrl.replace('/api/ai', '');
-        console.log(`[PROXY] POST ${req.originalUrl} -> http://localhost:3002/api/ai${aiPath}`);
+        console.log(`[PROXY] POST ${req.originalUrl} -> http://127.0.0.1:3002/api/ai${aiPath}`);
         
         const response = await axios({
             method: 'post',
-            url: `http://localhost:3002/api/ai${aiPath}`,
+            url: `http://127.0.0.1:3002/api/ai${aiPath}`,
             data: req.body,
             headers: { 'Content-Type': 'application/json' },
             timeout: 30000 // 30s timeout for AI
@@ -51,11 +51,11 @@ app.post(/^\/api\/ai\/(.*)/, async (req, res) => {
 app.get(/^\/api\/ai\/(.*)/, async (req, res) => {
     try {
         const aiPath = req.originalUrl.replace('/api/ai', '');
-        console.log(`[PROXY] GET ${req.originalUrl} -> http://localhost:3002/api/ai${aiPath}`);
+        console.log(`[PROXY] GET ${req.originalUrl} -> http://127.0.0.1:3002/api/ai${aiPath}`);
 
         const response = await axios({
             method: 'get',
-            url: `http://localhost:3002/api/ai${aiPath}`,
+            url: `http://127.0.0.1:3002/api/ai${aiPath}`,
             params: req.query,
             timeout: 10000
         });
@@ -93,7 +93,7 @@ app.get('/api/admin/debug', (req, res) => {
 
 // Test route
 app.get('/', (req, res) => {
-    res.send('BUPT-AI API is running v1.0.9-DIAGNOSTIC ✅ (Proxy Active)');
+    res.send('BUPT-AI API is running v1.0.10-PROXY-FIX ✅ (Proxy Active)');
 });
 
 export default app;
