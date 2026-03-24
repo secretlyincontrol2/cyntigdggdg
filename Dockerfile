@@ -27,7 +27,7 @@ RUN npx prisma generate
 
 # Build TypeScript code with memory optimization
 # Setting max-old-space-size to help tsc run on limited RAM
-ENV NODE_OPTIONS="--max-old-space-size=384"
+ENV NODE_OPTIONS="--max-old-space-size=192"
 RUN npm run build
 
 # Set Environment Variables
