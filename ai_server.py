@@ -324,8 +324,8 @@ async def practice_mode(req: PracticeRequest):
             difficulty=req.difficulty,
         )
 
-        # Try to parse structured questions from the response
-        questions = _parse_questions(raw_text, req.numQuestions)
+        # Robust JSON parsing
+        questions = _parse_json_block(raw_text)
 
         return {
             "mode": "practice",
@@ -343,33 +343,54 @@ async def practice_mode(req: PracticeRequest):
         })
 
 
-def _parse_questions(raw_text: str, expected_count: int) -> list:
-    """
-    Try to extract structured questions from Gemini's response.
-    Falls back to returning the raw text if parsing fails.
-    """
-    # First, try JSON parsing (if Gemini returned JSON)
+def _parse_json_block(text: str) -> list:
+    """Extracts and parses the first JSON object or array found in a text block."""
     try:
-        cleaned = re.sub(r"```json\n?", "", raw_text)
-        cleaned = re.sub(r"```\n?", "", cleaned).strip()
-        parsed = json.loads(cleaned)
-        if isinstance(parsed, dict) and "questions" in parsed:
-            return parsed["questions"]
-        if isinstance(parsed, list):
-            return parsed
-    except (json.JSONDecodeError, ValueError):
-        pass
+        # Step 1: Try direct parse (for JSON mode)
+        try:
+            data = json.loads(text.strip())
+            if isinstance(data, list):
+                return data
+            if isinstance(data, dict) and "questions" in data:
+                return data["questions"]
+            if isinstance(data, dict) and "cards" in data:
+                return data["cards"]
+            # If it's just one object, wrap it
+            if isinstance(data, dict):
+                return [data]
+        except:
+            pass
 
-    # Fallback: return as a single text block
-    return [
-        {
-            "id": 1,
-            "type": "short_answer",
-            "question": raw_text,
-            "expectedAnswer": "",
-            "explanation": "See the full response above.",
-        }
-    ]
+        # Step 2: Find everything between the first [ and the last ]
+        match = re.search(r"(\[.*\])", text, re.DOTALL)
+        if match:
+            json_str = match.group(1)
+            return json.loads(json_str)
+        
+        # Step 3: Try to find everything between { and }
+        match = re.search(r"(\{.*\})", text, re.DOTALL)
+        if match:
+            json_str = match.group(1)
+            data = json.loads(json_str)
+            return [data] if not isinstance(data, list) else data
+
+        # Step 4: Fallback: cleaning markdown blocks
+        cleaned = re.sub(r"```json\n?", "", text)
+        cleaned = re.sub(r"```\n?", "", cleaned).strip()
+        data = json.loads(cleaned)
+        return data if isinstance(data, list) else [data]
+    except Exception as e:
+        print(f"❌ JSON Parse Error: {e}")
+        # Final fallback: return a single item with the raw text
+        return [
+            {
+                "id": 1,
+                "type": "short_answer",
+                "question": text[:500] + "..." if len(text) > 500 else text,
+                "expectedAnswer": "See tutoring session for details.",
+                "explanation": f"Could not parse structured questions. (Error: {str(e)})",
+            }
+        ]
 
 
 # ── Chat (RAG) ───────────────────────────────────────────────
@@ -551,11 +572,44 @@ Be encouraging and well-organized."""
 
 
 # ── Student Progress ──────────────────────────────────────────
+flashcards_storage = []
+
+class FlashcardRequest(BaseModel):
+    course: str
+    topic: str
+    num_cards: int = 5
+
+@app.get("/api/ai/flashcards")
+async def get_flashcards():
+    return flashcards_storage
+
+@app.post("/api/ai/flashcards/generate")
+async def generate_flashcards(req: FlashcardRequest):
+    dept_name, _ = resolve_names("", req.course)
+    try:
+        raw_text = tutor.generate_flashcards(
+            department=dept_name,
+            course=req.course,
+            topic=req.topic,
+            num_cards=req.num_cards
+        )
+        # Parse JSON using the shared robust parser
+        cards = _parse_json_block(raw_text)
+        
+        # Add IDs
+        import uuid
+        for card in cards:
+            if isinstance(card, dict):
+                card["_id"] = str(uuid.uuid4())
+                flashcards_storage.append(card)
+            
+        return {"cards": cards}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/ai/progress/{student_id}")
 async def get_progress(student_id: str):
     return get_or_create_progress(student_id)
-
 
 @app.post("/api/ai/progress/{student_id}")
 async def post_progress(student_id: str, req: ProgressUpdateRequest):
@@ -609,6 +663,8 @@ if __name__ == "__main__":
     print("  * Health check:   GET  http://localhost:3002/api/ai/health")
     print("  * Study mode:     POST http://localhost:3002/api/ai/study")
     print("  * Practice mode:  POST http://localhost:3002/api/ai/practice")
+    print("  * Flashcards:     GET  http://localhost:3002/api/ai/flashcards")
+    print("  * Gen Flashcards: POST http://localhost:3002/api/ai/flashcards/generate")
     print("  * Chat:           POST http://localhost:3002/api/ai/chat")
     print("  * Tutor note:     POST http://localhost:3002/api/ai/tutor-note")
     print("  * Upload note:    POST http://localhost:3002/api/ai/upload-note")

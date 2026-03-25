@@ -20,8 +20,8 @@ export const registerUser = async (req: Request, res: Response) => {
         return;
     }
 
-    // Password Validation
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    // Password Validation: At least 8 chars, 1 upper, 1 lower, 1 digit, 1 special
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!passwordRegex.test(password)) {
         res.status(400).json({
             message: 'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number and one special character.'

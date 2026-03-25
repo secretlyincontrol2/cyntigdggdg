@@ -221,18 +221,8 @@ At the end, suggest 2-3 related topics the student should study next."""
     ):
         """
         PRACTICE MODE: Generate practice questions from course materials.
-
-        Args:
-            department:    e.g., "Computer Science"
-            course:        e.g., "CSC101"
-            topic:         e.g., "Data Structures"
-            num_questions: How many questions to generate (default 5)
-            difficulty:    "easy", "medium", or "hard"
-
-        Returns:
-            str: Formatted practice questions with answers
         """
-        # Step 1 — Retrieve relevant materials (bias toward past questions)
+        # Step 1 — Retrieve relevant materials
         search_query = f"{course} {topic} questions examination test"
         context, source_files = self._retrieve(
             search_query, course=course, n_results=6
@@ -240,13 +230,10 @@ At the end, suggest 2-3 related topics the student should study next."""
 
         # Step 2 — Build the prompt
         difficulty_desc = {
-            "easy": "basic recall and understanding questions suitable for beginners",
-            "medium": "application and analysis questions that test deeper understanding",
-            "hard": "synthesis and evaluation questions that challenge advanced students",
+            "easy": "basic recall and understanding",
+            "medium": "application and analysis",
+            "hard": "synthesis and evaluation",
         }
-
-        mcq_count = num_questions // 2
-        short_count = num_questions - mcq_count
 
         prompt = f"""You are an AI tutor creating practice questions for a {course} student
 in the {department} department at Babcock University.
@@ -255,50 +242,74 @@ COURSE MATERIALS AND PAST QUESTIONS:
 {context}
 
 Generate exactly {num_questions} practice questions on "{topic}".
-Difficulty level: {difficulty} — {difficulty_desc.get(difficulty, difficulty_desc['medium'])}
+Difficulty level: {difficulty} — {difficulty_desc.get(difficulty, 'medium')}
 
-FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+YOU MUST RESPOND ONLY WITH A VALID JSON ARRAY OF OBJECTS.
+Each object must have:
+- "id": (int)
+- "type": "multiple_choice" or "short_answer"
+- "question": (string, use markdown)
+- "options": (array of 4 strings for Multiple Choice, null for Short Answer)
+- "correctAnswer": (string, the correct option letter for MCQ, or full answer for Short Answer)
+- "explanation": (string, markdown)
+- "diagram": (string, optional, an ASCII or text-based diagram if relevant to the question)
+- "imageUrl": (string, optional, use "https://pollinations.ai/p/<Descriptive_Image_Prompt>?width=800&height=600&model=turbo" to generate a real AI image related to the question topic. Replace <Descriptive_Image_Prompt> with a specific URL-encoded prompt like "diagram_of_photosynthesis" or "logic_gate_circuit".)
 
-**Question 1** (Multiple Choice)
-[Question text]
-A) [Option A]
-B) [Option B]
-C) [Option C]
-D) [Option D]
+Example JSON:
+[
+  {{
+    "id": 1,
+    "type": "multiple_choice",
+    "question": "What is 2+2?",
+    "options": ["A) 3", "B) 4", "C) 5", "D) 6"],
+    "correctAnswer": "B) 4",
+    "explanation": "2 plus 2 equals 4 based on basic arithmetic.",
+    "diagram": null,
+    "imageUrl": null
+  }}
+]"""
 
-**Correct Answer:** [Letter]
-**Explanation:** [Why this is correct, referencing course materials]
+        # Step 3 — Call Gemini with JSON Mode
+        response = self.model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                response_mime_type="application/json",
+            )
+        )
+        return response.text
 
----
+    # ─────────────────────────────────────────────────────────────
+    # FLASHCARDS MODE
+    # ─────────────────────────────────────────────────────────────
 
-**Question 2** (Short Answer)
-[Question text]
+    def generate_flashcards(self, department, course, topic, num_cards=5):
+        """
+        FLASHCARDS MODE: Generate active recall cards from course materials.
+        """
+        # Retrieve context
+        search_query = f"{course} {topic} key concepts definitions"
+        context, _ = self._retrieve(search_query, course=course, n_results=6)
 
-**Expected Answer:** [The answer]
-**Explanation:** [Additional context]
+        prompt = f"""You are an AI tutor creating flashcards for a {course} student
+at Babcock University. 
 
----
+COURSE MATERIALS:
+{context}
 
-RULES:
-1. Mix question types: {mcq_count} multiple choice, {short_count} short answer
-2. Base questions on the provided course materials where possible
-3. Make questions relevant to the Nigerian university context
-4. Include clear explanations for each answer
-5. Questions should test understanding, not just memorization"""
+Generate {num_cards} high-quality flashcards for "{topic}".
+Focus on key definitions, concepts, and relationships.
 
-        # Step 3 — Call Gemini
+YOU MUST RESPOND ONLY WITH A VALID JSON ARRAY OF OBJECTS.
+Each object must have:
+- "question": (string, the front of the card, markdown)
+- "answer": (string, the back of the card, markdown)
+- "topic": "{topic}"
+- "difficulty": "easy", "medium", or "hard"
+
+Respond with ONLY the JSON array."""
+
         response = self.model.generate_content(prompt)
-        answer = response.text
-
-        # Step 4 — Print results
-        print(f"\n📝 PRACTICE MODE — {course}: {topic}")
-        print(f"📎 Based on: {', '.join(source_files) if source_files else 'General knowledge'}")
-        print(f"🎯 Difficulty: {difficulty} | Questions: {num_questions}")
-        print("═" * 60)
-        print(answer)
-        print("═" * 60)
-
-        return answer
+        return response.text
 
     # ─────────────────────────────────────────────────────────────
     # GENERAL CHAT
