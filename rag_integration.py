@@ -278,6 +278,37 @@ Example JSON:
         )
         return response.text
 
+    def verify_practice_answer(self, question: str, student_answer: str, expected_answer: str) -> dict:
+        """Evaluates a student's short answer using AI."""
+        prompt = f"""Evaluate this student's answer for correctness.
+        
+QUESTION: {question}
+EXPECTED KEY POINTS: {expected_answer}
+STUDENT'S ANSWER: {student_answer}
+
+Respond ONLY with a JSON object:
+{{
+  "isCorrect": (boolean),
+  "score": (number from 0 to 100),
+  "feedback": (string, short and encouraging explanation)
+}}"""
+        response = self.model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                response_mime_type="application/json",
+            )
+        )
+        try:
+            return json.loads(response.text)
+        except:
+            # Fallback
+            is_correct = expected_answer.lower() in student_answer.lower()
+            return {
+                "isCorrect": is_correct,
+                "score": 100 if is_correct else 0,
+                "feedback": "Processed with fuzzy matching."
+            }
+
     # ─────────────────────────────────────────────────────────────
     # FLASHCARDS MODE
     # ─────────────────────────────────────────────────────────────

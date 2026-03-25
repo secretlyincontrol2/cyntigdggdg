@@ -343,6 +343,24 @@ async def practice_mode(req: PracticeRequest):
         })
 
 
+class VerifyRequest(BaseModel):
+    question: str
+    studentAnswer: str
+    expectedAnswer: str
+
+@app.post("/api/ai/practice/verify")
+async def verify_practice_result(req: VerifyRequest):
+    try:
+        result = tutor.verify_practice_answer(
+            question=req.question,
+            student_answer=req.studentAnswer,
+            expected_answer=req.expectedAnswer
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 def _parse_json_block(text: str) -> list:
     """Extracts and parses the first JSON object or array found in a text block."""
     try:
