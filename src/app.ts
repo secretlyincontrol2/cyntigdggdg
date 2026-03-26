@@ -67,7 +67,7 @@ app.post(/^\/api\/ai\/(.*)/, async (req, res) => {
             url: `http://127.0.0.1:3002/api/ai${aiPath}`,
             data: req.body,
             headers: { 'Content-Type': 'application/json' },
-            timeout: 30000 // 30s timeout for AI
+            timeout: 180000 // 180s for AI generation (handles cold starts)
         });
         res.status(response.status).json(response.data);
     } catch (error: any) {
