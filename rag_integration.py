@@ -279,35 +279,49 @@ Example JSON:
         return response.text
 
     def verify_practice_answer(self, question: str, student_answer: str, expected_answer: str) -> dict:
-        """Evaluates a student's short answer using AI."""
-        prompt = f"""Evaluate this student's answer for correctness.
-        
-QUESTION: {question}
-EXPECTED KEY POINTS: {expected_answer}
-STUDENT'S ANSWER: {student_answer}
+        """Evaluates a student's short answer using AI with strict criteria."""
+        prompt = f"""You are a strict but fair examiner at Babcock University. 
+        Evaluate the student's answer against the expected key points for the given question.
 
-Respond ONLY with a JSON object:
-{{
-  "isCorrect": (boolean),
-  "score": (number from 0 to 100),
-  "feedback": (string, short and encouraging explanation)
-}}"""
-        response = self.model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                response_mime_type="application/json",
-            )
-        )
+        QUESTION: {question}
+        EXPECTED KEY POINTS / MODEL ANSWER: {expected_answer}
+        STUDENT'S ANSWER: {student_answer}
+
+        CRITERIA FOR "isCorrect":
+        1. The student must demonstrate an understanding of the CORE CONCEPT.
+        2. Minor grammatical or spelling errors should be ignored.
+        3. If the answer is partially correct but misses crucial points, "isCorrect" should be FALSE (but provide a score reflecting partial credit).
+        4. If the answer is irrelevant, nonsensical, or "I don't know", "isCorrect" MUST be FALSE.
+        5. Semantic equivalence counts — they don't need to use the exact words, just the same meaning.
+
+        Respond ONLY with a JSON object:
+        {{
+          "isCorrect": (boolean - True ONLY if the answer is substantially correct),
+          "score": (number from 0 to 100 representing accuracy),
+          "feedback": (string, concise explanation of why they are right or wrong, and how to improve)
+        }}"""
+        
         try:
+            import json
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    response_mime_type="application/json",
+                )
+            )
             return json.loads(response.text)
-        except:
-            # Fallback
-            is_correct = expected_answer.lower() in student_answer.lower()
+        except Exception as e:
+            print(f"⚠️ AI Grade Error: {e}")
+            # Fallback: simple keyword check for safety
+            keywords = [w.lower() for w in expected_answer.split() if len(w) > 4]
+            matches = sum(1 for k in keywords if k in student_answer.lower())
+            is_correct = matches >= (len(keywords) * 0.4) if keywords else False
+            
             return {
                 "isCorrect": is_correct,
                 "score": 100 if is_correct else 0,
-                "feedback": "Processed with fuzzy matching."
-            }
+                "feedback": "Evaluation performed using keyword matching due to an AI response error."
+        }
 
     # ─────────────────────────────────────────────────────────────
     # FLASHCARDS MODE

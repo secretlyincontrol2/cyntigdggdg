@@ -26,6 +26,37 @@ app.all('/api/ai/test', (req, res) => {
     res.json({ message: 'AI Proxy Route is active 🤖', originalUrl: req.originalUrl });
 });
 
+const multer = require('multer');
+const FormData = require('form-data');
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post('/api/ai/upload-note', upload.single('note'), async (req: any, res) => {
+    try {
+        console.log(`[PROXY] UPLOAD ${req.originalUrl} -> http://127.0.0.1:3002/api/ai/upload-note`);
+        
+        const form = new FormData();
+        if (req.file) {
+            form.append('note', req.file.buffer, {
+                filename: req.file.originalname,
+                contentType: req.file.mimetype,
+            });
+        }
+        if (req.body.question) form.append('question', req.body.question);
+        if (req.body.course) form.append('course', req.body.course);
+
+        const response = await axios.post(`http://127.0.0.1:3002/api/ai/upload-note`, form, {
+            headers: {
+                ...form.getHeaders(),
+                timeout: 60000 // 60s for file processing
+            }
+        });
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        console.error('AI Proxy Upload Error:', error.message);
+        res.status(error.response?.status || 500).json(error.response?.data || { message: 'AI Server Error' });
+    }
+});
+
 app.post(/^\/api\/ai\/(.*)/, async (req, res) => {
     try {
         const aiPath = req.originalUrl.replace('/api/ai', '');
