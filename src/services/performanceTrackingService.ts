@@ -283,6 +283,15 @@ export const savePerformanceMetric = async (
             }
         });
 
+        // Sync aggregate points and study hours to User model for dashboard
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                points: { increment: leaderboardPoints },
+                studyHoursTotal: { increment: Math.round(metrics.totalStudyMinutes / 60) }
+            }
+        });
+
         return true;
     } catch (error) {
         console.error('Error saving performance metric:', error);
